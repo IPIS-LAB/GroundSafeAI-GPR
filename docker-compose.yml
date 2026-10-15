@@ -1,0 +1,23 @@
+services:
+  gpr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gpr-yolo:cu124
+    container_name: gpr
+    working_dir: /workspace/GroundSafeAI-GPR
+    shm_size: 16g            # DataLoader worker 멈춤 방지
+    ipc: host
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./:/workspace/GroundSafeAI-GPR
+      - /mnt/ssd-check:/datasets   # 원본 데이터 (호스트 경로는 환경에 맞게 수정)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: bash

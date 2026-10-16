@@ -1,0 +1,62 @@
+# ============================================================================
+# GPR 조건부 생성모델 — Python 의존성 (Docker 이미지용)
+#
+# 전제 조건 (pip로 설치되지 않음, 베이스 이미지에서 제공할 것)
+#   CUDA Runtime 12.4 / cuDNN 9.1 / NVIDIA 드라이버 >= 550
+#   권장 베이스: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+#   검증 환경  : 드라이버 580.178.04, CUDA 12.4, A100 40GB, Python 3.11
+#
+# 설치 (torch는 반드시 cu124 인덱스에서):
+#   pip install --extra-index-url https://download.pytorch.org/whl/cu124 -r requirements.txt
+#
+# 주의: torch/torchvision은 +cu124 빌드여야 한다. PyPI 기본 휠은 cu12x 번들이
+#       다를 수 있어 nvidia-* 패키지와 충돌한다.
+# ============================================================================
+
+# ---- 핵심: PyTorch (CUDA 12.4) --------------------------------------------
+torch==2.5.1+cu124
+torchvision==0.20.1+cu124
+triton==3.1.0                  # torch 2.5.1이 요구하는 정확한 버전
+
+# ---- 확산모델 --------------------------------------------------------------
+diffusers==0.29.2              # UNet2DConditionModel. 상위 버전은 API 변경 위험
+transformers==4.46.1
+accelerate==1.14.0
+huggingface-hub==0.26.2
+safetensors==0.8.0
+tokenizers==0.20.3
+peft==0.20.0                   # 현재 미사용(SDXL LoRA 경로 잔재). 제거 가능
+
+# ---- 탐지 모델 (평가 오라클) ------------------------------------------------
+# torch>=1.8.0만 요구하므로 위 torch 2.5.1과 동일 환경에서 동작함을 확인했다
+# (별도 환경 분리 불필요).
+ultralytics==8.3.234
+ultralytics-thop>=2.0.18
+polars>=0.20.0                 # ultralytics 8.3.x 의존
+# opencv: ultralytics가 opencv-python을 하드 의존으로 끌어온다. 컨테이너에서는
+# headless만 쓰는 편이 가볍지만 둘이 동시에 깔려도 동작은 한다. GUI 라이브러리
+# (libgl1)를 넣기 싫다면 설치 후 아래로 교체:
+#   pip uninstall -y opencv-python && pip install --force-reinstall opencv-python-headless
+opencv-python-headless>=4.6.0
+
+# ---- 평가 지표 --------------------------------------------------------------
+torchmetrics==1.9.0            # FID/KID
+torch-fidelity==0.4.0
+scikit-image==0.26.0           # SSIM/PSNR
+scipy==1.17.1                  # butter/filtfilt/resample (K-water 변환)
+
+# ---- 수치/영상 --------------------------------------------------------------
+numpy>=1.26.4,<3                # 1.26.4와 2.4.6 양쪽에서 동작 확인
+pillow==12.2.0
+matplotlib==3.11.0
+tifffile>=2026.3.3
+imageio>=2.37.0
+lazy-loader>=0.5
+
+# ---- 유틸 ------------------------------------------------------------------
+tqdm>=4.68.0
+pyyaml>=6.0
+psutil>=7.0
+requests>=2.32
+einops==0.8.2
+markdown>=3.10                 # scripts/md2pdf.py (보고서 생성)
